@@ -1,0 +1,16 @@
+{
+  "name": "Plätzchen-Planer",
+  "short_name": "Plätzchen",
+  "description": "Plätzchen-Rezepte auswählen und Einkaufsliste erstellen",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf6ef",
+  "theme_color": "#faf6ef",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

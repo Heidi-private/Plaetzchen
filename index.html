@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plätzchen-Planer</title>
+<meta name="theme-color" content="#faf6ef">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Plätzchen">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#faf6ef; --card:#ffffff; --ink:#2b2420; --muted:#7a6e66; --line:#e9e1d6;
+  --accent:#b5452f; --accent-soft:#f6e3dc; --green:#3f7d4e; --green-soft:#e2f0e5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,system-ui,sans-serif}
+header{padding:calc(20px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) 12px calc(20px + env(safe-area-inset-left));max-width:1200px;margin:0 auto}
+h1{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:30px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0}
+.tabs{display:flex;gap:8px;max-width:1200px;margin:14px auto 0;padding:0 20px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--card);padding:9px 16px;border-radius:999px;cursor:pointer;font:inherit;font-weight:500;color:var(--ink)}
+.tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.badge{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--accent);color:#fff;font-size:12px;line-height:20px;text-align:center}
+main{max-width:1200px;margin:0 auto;padding:16px calc(20px + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left))}
+.tabs{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:8px;padding-bottom:8px}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input[type=search]{flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+.btn{border:1px solid var(--line);background:#fff;padding:9px 14px;border-radius:10px;cursor:pointer;font:inherit;color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn:hover{filter:brightness(.97)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;transition:border-color .15s, box-shadow .15s}
+.card.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.photo{margin:-14px -16px 12px;height:180px;border-radius:13px 13px 0 0;overflow:hidden;background:#f1ebe2;cursor:zoom-in}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo{position:relative}
+.photo .del{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:16px;cursor:pointer}
+.addphoto{display:flex;align-items:center;justify-content:center;gap:6px;margin:-14px -16px 12px;height:44px;border-radius:13px 13px 0 0;background:#f4eee5;color:var(--muted);font-size:13.5px;cursor:pointer;border-bottom:1px dashed var(--line)}
+.addphoto input{display:none}
+.lightbox{position:fixed;inset:0;background:rgba(20,15,12,.85);display:flex;align-items:center;justify-content:center;z-index:50;cursor:zoom-out;padding:20px}
+.lightbox img{max-width:95vw;max-height:85vh;border-radius:12px}
+.lightbox p{position:absolute;bottom:18px;left:0;right:0;text-align:center;color:#fff;font-family:Georgia,'Times New Roman',serif;font-size:20px;margin:0}
+.card-head{display:flex;gap:10px;align-items:flex-start}
+.card-head input[type=checkbox]{width:20px;height:20px;margin-top:3px;accent-color:var(--accent);cursor:pointer;flex:none}
+.card h3{font-family:Georgia,'Times New Roman',serif;font-weight:600;font-size:18px;margin:0;line-height:1.25;cursor:pointer}
+.meta{color:var(--muted);font-size:12.5px;margin-top:2px}
+.qty{display:flex;align-items:center;gap:6px;margin:10px 0 6px;font-size:13.5px}
+.qty button{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:16px;color:var(--ink)}
+.qty input{width:58px;height:30px;text-align:center;border:1px solid var(--line);border-radius:8px;font:inherit}
+.qty.off{opacity:.45}
+table.ing{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:4px}
+table.ing td{padding:3px 0;border-bottom:1px dashed var(--line);vertical-align:top}
+table.ing td.amt{white-space:nowrap;text-align:right;padding-right:12px;width:1%;font-variant-numeric:tabular-nums;color:var(--ink);font-weight:500}
+table.ing tr.grp td{border-bottom:none;padding-top:8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.opt{color:var(--muted);font-size:12px}
+.note{color:var(--muted);font-size:12.5px;margin-top:8px;font-style:italic}
+.shop-wrap{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:18px}
+@media (max-width:820px){.shop-wrap{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.panel h2{font-family:Georgia,'Times New Roman',serif;font-size:20px;margin:0 0 8px}
+.cat{margin-top:14px}
+.cat h4{margin:0 0 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.item{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line)}
+.item input{width:18px;height:18px;margin-top:2px;accent-color:var(--green);flex:none;cursor:pointer}
+.item .name{flex:1}
+.item .amount{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.item .from{display:block;color:var(--muted);font-size:12px}
+.item.done .name,.item.done .amount{text-decoration:line-through;color:var(--muted)}
+.empty{color:var(--muted);padding:30px 0;text-align:center}
+.sel-list li{margin:4px 0}
+.hint{background:var(--green-soft);border-radius:10px;padding:10px 12px;font-size:13px;color:#24452d;margin-top:12px}
+.toggle{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--muted)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+.src{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:#f1ebe2;color:var(--muted);margin-left:4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🍪 Plätzchen-Planer</h1>
+  <p class="sub">Rezepte anhaken, Anzahl wählen – die Einkaufsliste rechnet sich automatisch zusammen.</p>
+</header>
+<div class="tabs">
+  <button class="tab active" data-view="rezepte">Rezepte</button>
+  <button class="tab" data-view="einkauf">Einkaufsliste <span class="badge" id="badge">0</span></button>
+</div>
+<main>
+  <section id="view-rezepte">
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Rezept oder Zutat suchen …">
+      <button class="btn" id="onlySel">Nur ausgewählte</button>
+      <button class="btn" id="resetSel">Auswahl zurücksetzen</button>
+      <button class="btn primary" id="toShop">Zur Einkaufsliste →</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="view-einkauf" hidden>
+    <div class="shop-wrap">
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <h2 style="margin:0">Einkaufsliste</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <label class="toggle"><input type="checkbox" id="optToggle" checked> optionale Zutaten einrechnen</label>
+            <button class="btn" id="copyList">Liste kopieren</button>
+          </div>
+        </div>
+        <div id="shop"></div>
+      </div>
+      <div class="panel">
+        <h2>Ausgewählt</h2>
+        <ul class="sel-list" id="selList"></ul>
+        <div class="hint">Zutaten, die du schon zu Hause hast, einfach abhaken – sie werden durchgestrichen.
+        <br><br><b>Eier:</b> Ganze Eier, Eigelb und Eiweiß werden zusammengerechnet (übriges Eiweiß aus einem Rezept deckt Eiweiß im anderen).</div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Zutaten-Stamm: Anzeigename + Kategorie ---------- */
+const CATS = ["Mehl, Zucker & Backzutaten","Butter, Milchprodukte & Eier","Nüsse, Kokos & Trockenfrüchte","Schokolade & Kuvertüre","Gewürze & Aromen","Marmelade & Süßes","Sonstiges"];
+const I = {
+  mehl:["Weizenmehl",0], roggenmehl:["Roggenmehl",0], zucker:["Zucker",0], puderzucker:["Puderzucker",0],
+  braunerzucker:["Brauner Zucker",0], vanillezucker:["Vanillezucker",0], backpulver:["Backpulver",0],
+  natron:["Natron",0], staerke:["Speisestärke",0], kakao:["Backkakao",0], honig:["Honig",5], ahornsirup:["Ahornsirup",5],
+  oblaten:["Oblaten (Ø 7 cm)",0], zimtzucker:["Zimtzucker (zum Wälzen)",0],
+  butter:["Butter",1], ei:["Eier",1], eigelb:["Eigelb",1], eiweiss:["Eiweiß",1], sahne:["Sahne",1], quark:["Quark",1],
+  frischkaese:["Frischkäse",1], doppelrahm:["Doppelrahm-Frischkäse",1], mascarpone:["Mascarpone",1],
+  kondensmilch:["Gezuckerte Kondensmilch",1], kokosmilch:["Kokosmilch",1], kokosoel:["Kokosöl",1],
+  mandelngem:["Mandeln, gemahlen",2], mandelngeh:["Mandeln, gehackt",2], mandelnhob:["Mandeln, gehobelt",2],
+  haselgem:["Haselnüsse, gemahlen",2], walnussgem:["Walnüsse, gemahlen",2], pistazien:["Pistazien (roh, ungesalzen)",2],
+  kokos:["Kokosraspeln / -flocken",2], orangeat:["Orangeat",2], zitronat:["Zitronat",2],
+  erdbeerenft:["Gefriergetrocknete Erdbeeren",2], himbeerenft:["Gefriergetrocknete Himbeeren",2], beerenft:["Gefriergetrocknete Beeren",2],
+  zartbitter:["Zartbitter-Schokolade / -Kuvertüre",3], bitterschoko:["Bitterschokolade (60–85 %)",3],
+  kuvwahl:["Kuvertüre nach Wahl",3], veganekuv:["Vegane Kuvertüre",3], weisseschoko:["Weiße Schokolade / Kuvertüre",3],
+  schokoguss:["Schokoladenguss",3], schokoplaetzchen:["Schoko-Plätzchen (Deko)",3], schokostreusel:["Schokostreusel",3],
+  zimt:["Zimt",4], salz:["Salz",4], spekgewuerz:["Spekulatiusgewürz",4], lebkgewuerz:["Lebkuchengewürz",4],
+  tonka:["Tonkabohne",4], vanilleschote:["Vanilleschote",4], vanille:["Vanilleextrakt",4], kardamom:["Kardamom",4],
+  rumaroma:["Rum-Aroma",4], bittermandel:["Bittermandel-Aroma",4], buttervanille:["Butter-Vanille-Aroma",4],
+  rosenwasser:["Rosen-/Orangenblütenwasser (oder Vanilleextrakt)",4], orangenschalepck:["Orangenschale (Dr. Oetker, Päckchen)",4],
+  orange:["Bio-Orangen",4], zitrone:["Bio-Zitronen",4], zitronenschale:["Zitronenschale, abgerieben",4], zitronensaft:["Zitronensaft",4],
+  orangenabrieb:["Orangenschale, abgerieben",4],
+  lmfarbegelb:["Lebensmittelfarbe gelb",5], lmfarbeblau:["Lebensmittelfarbe blau",5],
+  himbeerkonf:["Himbeerkonfitüre / -marmelade",5], johannisgelee:["Johannisbeergelee",5], quittenmarm:["Quittenmarmelade",5],
+  mangokonf:["Mango-Maracuja-Konfitüre",5], marmelade:["Marmelade nach Wahl",5], erdbeerguss:["Erdbeerguss",5],
+  marzipan:["Marzipan-Rohmasse",5], marzipandecke:["Marzipandecke",5], nutella:["Nutella",5],
+  oreos:["Oreo-Kekse",6], butterkekse:["Butterkekse",6], spekulatius:["Butter-/Gewürzspekulatius",6],
+  minilebkuchen:["Mini-Lebkuchenmännchen (Deko)",6], goldspray:["Goldpuderspray",6], krokant:["Krokant / Topping nach Wahl",6]
+};
+
+/* ---------- Rezepte ----------
+   Zutat: [key, menge|null, einheit, hinweis, optional]
+   Gruppe: ["#", "Überschrift"] */
+const R = [
+ {id:"zimtstangen",name:"Zimtstangen",src:"Plätzchen",yield:"1 Blech",ing:[
+  ["#","Teig"],["mandelngem",175,"g"],["puderzucker",100,"g"],["zimt",1,"TL"],["eiweiss",1,"Stk"],
+  ["#","Baiser"],["eiweiss",1,"Stk"],["zitronensaft",2,"EL"],["salz",1,"Prise"],["puderzucker",150,"g"]]},
+ {id:"kokospistazie",name:"Kokos-Pistazien-Makronen",src:"Plätzchen",ing:[
+  ["kokos",150,"g","Kokosflocken, eingeweicht"],["pistazien",180,"g"],["zucker",100,"g","Kristallzucker"],["staerke",1.5,"EL"],
+  ["rosenwasser",1,"TL"],["ei",1,"Stk"],["eiweiss",1,"Stk"],["salz",1,"Prise"],["zartbitter",150,"g","1½ Tafeln dunkle Schokolade"]]},
+ {id:"traumstuecke",name:"Spekulatius- & Schoko-Traumstücke",src:"Plätzchen",yield:"2 Sorten aus einem Teig",ing:[
+  ["#","Grundteig"],["mehl",500,"g"],["eigelb",5,"Stk"],["butter",250,"g"],["vanillezucker",2,"Pck"],["zucker",150,"g"],
+  ["#","Spekulatius-Hälfte"],["spekgewuerz",2,"TL"],
+  ["#","Schoko-Hälfte"],["kakao",2,"EL"],["tonka",0.5,"Stk","gerieben"],
+  ["#","Zum Wälzen"],["puderzucker",null,"","nach Bedarf"]]},
+ {id:"nutella",name:"Superschnelle Nutella-Plätzchen",src:"Plätzchen",ing:[
+  ["nutella",180,"g"],["ei",1,"Stk"],["mehl",150,"g"],["backpulver",1,"TL"],["puderzucker",null,"","zum Bestäuben"]]},
+ {id:"zitronenpralinen",name:"Zitronen-Pralinen",src:"Plätzchen",ing:[
+  ["weisseschoko",180,"g"],["butter",60,"g"],["salz",1,"Prise"],["zitronenschale",2,"EL"],["sahne",3,"EL"],["vanille",1,"TL"],
+  ["lmfarbegelb",null,"","ein paar Tropfen"],["puderzucker",null,"","zum Wälzen"]]},
+ {id:"lebkuchenmaenner",name:"Lebkuchen-Männer",src:"Plätzchen",yield:"ca. 30 Stück",ing:[
+  ["#","Teig"],["roggenmehl",500,"g"],["honig",250,"g"],["butter",80,"g"],["zucker",120,"g"],["ei",2,"Stk","mittelgroß"],
+  ["natron",2,"TL"],["lebkgewuerz",1.5,"EL"],
+  ["#","Spritzglasur"],["eiweiss",1,"Stk","30 g Eiweiß ≈ 1 Eiweiß"],["puderzucker",200,"g"]]},
+ {id:"zimtkekse",name:"Zarte Zimt-Kekse",src:"Plätzchen",ing:[
+  ["mehl",150,"g","1 Tasse (250 ml) ≈ 150 g"],["butter",100,"g","weich"],["quark",200,"g"],["zimtzucker",null,"","zum Wälzen"]]},
+ {id:"oreo",name:"Oreo-Pralinen",src:"Plätzchen",ing:[
+  ["oreos",28,"Stk"],["frischkaese",100,"g"],["weisseschoko",400,"g","weiße Kuvertüre"]]},
+ {id:"orangen",name:"Orangen-Plätzchen",src:"Plätzchen",yield:"ca. 40 Stück",ing:[
+  ["orange",3,"Stk"],["mehl",300,"g"],["zucker",100,"g"],["salz",1,"Prise"],["eigelb",1,"Stk"],["butter",200,"g"],["puderzucker",200,"g","für den Guss"]]},
+ {id:"marzipanlebkuchen",name:"Marzipan-Lebkuchen mit Oblaten",src:"Plätzchen",yield:"ca. 18 Stück",ing:[
+  ["haselgem",200,"g"],["mandelngem",200,"g"],["marzipan",200,"g"],["ei",3,"Stk"],["orangeat",50,"g"],["zitronat",50,"g"],
+  ["zucker",50,"g"],["zimt",1,"TL"],["lebkgewuerz",0.5,"TL"],["zitronenschale",0.25,"TL"],
+  ["#","Zusätzlich"],["oblaten",18,"Stk"],["puderzucker",100,"g"],["zitronensaft",null,"","etwas"]]},
+ {id:"bounty",name:"Bounty-Pralinen",src:"Plätzchen",ing:[
+  ["kokos",200,"g","Kokosraspeln"],["kondensmilch",400,"ml","1 Dose"],["veganekuv",200,"g"]]},
+ {id:"spitzbuben",name:"Spitzbuben (klassisch)",src:"Plätzchen",yield:"ca. 60 Stück",ing:[
+  ["#","Teig"],["mehl",500,"g"],["ei",2,"Stk"],["zucker",200,"g"],["salz",1,"Prise"],["vanillezucker",2,"Pck"],["butter",275,"g"],
+  ["#","Füllung & Deko"],["himbeerkonf",200,"g"],["puderzucker",null,"","zum Bestäuben"]],
+  note:"Der gleiche Teig ergibt auch Butterplätzchen – dann mit Glasur aus 200 g Puderzucker und Saft von ½ Zitrone."},
+ {id:"kaesekuchen",name:"Käsekuchen-Pralinen",src:"Plätzchen",yield:"30 Stück",ing:[
+  ["butterkekse",200,"g"],["doppelrahm",250,"g"],["mangokonf",3,"EL"],["zitronensaft",1,"EL"],["salz",1,"Prise"],
+  ["kokos",3,"EL"],["weisseschoko",100,"g"],["erdbeerenft",null,"","zum Verzieren"]]},
+ {id:"marzipanwoelkchen",name:"Marzipan-Wölkchen",src:"Plätzchen",ing:[
+  ["marzipan",200,"g"],["eiweiss",1,"Stk"],["puderzucker",50,"g"],["mandelnhob",70,"g"]]},
+ {id:"schokomousse",name:"Schoko-Mousse-Himbeer-Pralinen",src:"Plätzchen",ing:[
+  ["kokosmilch",400,"g","1 Dose, hoher Kokosanteil"],["bitterschoko",300,"g"],["kokosoel",60,"g","weich"],["ahornsirup",80,"g"],
+  ["himbeerenft",25,"g"],["#","Optional"],["zartbitter",200,"g","Schokolade nach Wahl für die Deko",true]]},
+ {id:"butterplaetzchen",name:"Butterplätzchen (Zimtzucker)",src:"Plätzchen",ing:[
+  ["butter",250,"g"],["ei",2,"Stk"],["zucker",250,"g"],["mehl",500,"g"],["backpulver",0.5,"Pck"],["buttervanille",1,"Fl.","Fläschchen"],
+  ["zimtzucker",null,"","zum Wälzen"]],
+  note:"Laut deiner handschriftlichen Änderung: Zitrone/Zitro-Back gestrichen, dafür ½ Backpulver und 1 Butter-Vanille."},
+ {id:"engelsaugenpool",name:"Engelsaugen „Pool-Version“",src:"Neue Plätzchen 2024",ing:[
+  ["mehl",300,"g"],["zucker",100,"g"],["salz",1,"Prise"],["vanilleschote",1,"Stk","das Mark"],["haselgem",80,"g"],["butter",200,"g"],["eigelb",2,"Stk"],
+  ["#","Zusätzlich"],["quittenmarm",null,"","nach Bedarf"],["puderzucker",null,"","nach Bedarf"],["lmfarbeblau",null,"","etwas"],
+  ["minilebkuchen",null,"","laut Foto, optional",true]]},
+ {id:"himmelsboten",name:"Himmelsboten",src:"Neue Plätzchen 2024",ing:[
+  ["butter",125,"g"],["puderzucker",100,"g"],["mehl",250,"g"],["backpulver",0.5,"TL"],["orangenabrieb",1,"TL","",true],["ei",1,"Stk"],
+  ["#","Deko"],["schokoguss",null,"","nach Bedarf"],["schokoplaetzchen",null,"","nach Bedarf"]]},
+ {id:"marzipansterne",name:"Marzipan-Sterne",src:"Neue Plätzchen 2024",ing:[
+  ["#","Teig"],["mehl",300,"g"],["zucker",200,"g"],["vanillezucker",1,"Pck"],["rumaroma",1,"Fl.","kleine Flasche"],["bittermandel",3,"Tropfen"],
+  ["kardamom",1,"Msp."],["butter",200,"g"],["salz",1,"Prise"],["walnussgem",150,"g"],
+  ["#","Außerdem"],["marzipandecke",2,"Stk","= 400 g Marzipan"],["zartbitter",200,"g","Kuvertüre"],["johannisgelee",200,"g"]]},
+ {id:"igelkekse",name:"Igelkekse",src:"Neue Plätzchen 2024",yield:"ca. 45 Stück",ing:[
+  ["mehl",350,"g"],["zucker",150,"g"],["vanillezucker",1,"Pck"],["orangenschalepck",1,"Pck"],["mandelngem",100,"g"],["butter",250,"g"],["ei",1,"Stk"],
+  ["#","Deko"],["zartbitter",null,"","zum Bestreichen"],["krokant",null,"","gehackte Mandeln, Krokant, Kokos oder Schokostreusel"]]},
+ {id:"zimtschnecken",name:"Zimtschnecken-Plätzchen",src:"Neue Plätzchen 2024",yield:"ca. 50 Stück",ing:[
+  ["#","Teig"],["zucker",100,"g"],["butter",200,"g","kalt"],["mehl",300,"g"],["salz",1,"Prise"],["vanille",0.5,"TL"],
+  ["#","Füllung"],["eiweiss",2,"Stk"],["braunerzucker",60,"g"],["zimt",2,"TL"],["mandelngem",100,"g"]]},
+ {id:"spekulatiuspralinen",name:"Spekulatius-Pralinen",src:"Neue Plätzchen 2024",yield:"ca. 20 Stück",ing:[
+  ["spekulatius",200,"g"],["mascarpone",50,"g"],["kuvwahl",200,"g"]]},
+ {id:"engelsaugenschoko",name:"Schoko-Engelsaugen",src:"Neue Plätzchen 2024",ing:[
+  ["mehl",275,"g"],["kakao",25,"g"],["puderzucker",80,"g"],["butter",190,"g"],["vanillezucker",1,"Pck"],["zimt",1,"TL"],
+  ["#","Zum Wälzen & Füllen"],["vanillezucker",null,"","zum Wälzen"],["weisseschoko",null,"","weiße Kuvertüre zum Füllen"]]},
+ {id:"engelsaugenmandel",name:"Engelsaugen mit Mandeln",src:"Neue Plätzchen 2024",ing:[
+  ["butter",250,"g"],["mehl",450,"g"],["mandelngem",50,"g"],["zucker",120,"g"],["ei",1,"Stk"],
+  ["#","Deko nach Belieben"],["erdbeerguss",null,"",""],["minilebkuchen",null,"",""],["beerenft",null,"",""],["marmelade",null,"",""]]},
+ {id:"mandelstaebchen",name:"Mandelstäbchen mit Zimt & Himbeere",src:"Neue Plätzchen 2024",yield:"1 Blech (42 × 29 cm)",ing:[
+  ["#","Mürbeteig"],["mehl",250,"g"],["puderzucker",50,"g"],["butter",100,"g"],["ei",1,"Stk"],["salz",1,"Prise"],["vanillezucker",1,"Pck"],
+  ["#","Belag"],["mandelngeh",200,"g"],["mandelngem",200,"g"],["honig",2,"EL"],["zucker",80,"g","weiß oder braun"],["butter",120,"g"],
+  ["zimt",1,"TL"],["himbeerkonf",null,"","zum Bestreichen"],["zartbitter",100,"g","Kuvertüre oder Kuchenglasur"],["goldspray",null,"","",true]],
+  note:"Außerdem 4 EL + 3 EL Wasser."},
+ {id:"omaspitzbuben",name:"Omas Spitzbuben",src:"Neue Plätzchen 2024",ing:[
+  ["butter",150,"g"],["puderzucker",125,"g"],["vanillezucker",1,"Pck"],["ei",1,"Stk"],["mehl",300,"g","je nach Eigröße etwas mehr"],
+  ["#","Füllung"],["johannisgelee",null,"","nach Bedarf"],["puderzucker",null,"","zum Bestäuben"]]}
+];
+
+/* ---------- Eigene Fotos (nur auf diesem Gerät, IndexedDB) ---------- */
+let PHOTOS={};
+function idb(){ return new Promise((res,rej)=>{ const q=indexedDB.open("plaetzchen-fotos",1);
+  q.onupgradeneeded=()=>q.result.createObjectStore("fotos"); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function idbAll(){ const db=await idb(); return new Promise((res,rej)=>{ const out={}; const t=db.transaction("fotos").objectStore("fotos").openCursor();
+  t.onsuccess=e=>{ const c=e.target.result; if(c){ out[c.key]=c.value; c.continue(); } else res(out); }; t.onerror=()=>rej(t.error); }); }
+async function idbPut(k,v){ const db=await idb(); return new Promise((res,rej)=>{ const tx=db.transaction("fotos","readwrite"); v==null?tx.objectStore("fotos").delete(k):tx.objectStore("fotos").put(v,k); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+function shrink(file){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(file); const im=new Image();
+  im.onload=()=>{ const m=900, sc=Math.min(1,m/Math.max(im.width,im.height)); const cv=document.createElement("canvas");
+    cv.width=Math.round(im.width*sc); cv.height=Math.round(im.height*sc); cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+    URL.revokeObjectURL(url); res(cv.toDataURL("image/jpeg",0.8)); };
+  im.onerror=rej; im.src=url; }); }
+async function addPhoto(id,file){ const d=await shrink(file); await idbPut(id,d); PHOTOS[id]=d; }
+async function delPhoto(id){ await idbPut(id,null); delete PHOTOS[id]; }
+/* ---------- Zustand ---------- */
+let state = {sel:{}, done:{}, opt:true};
+try{ const s=JSON.parse(localStorage.getItem("plaetzchen-planer")||"null"); if(s) state=Object.assign(state,s);}catch(e){}
+const save=()=>{try{localStorage.setItem("plaetzchen-planer",JSON.stringify(state))}catch(e){}};
+let onlySel=false;
+
+/* ---------- Formatierung ---------- */
+function fmt(n,unit){
+  if(n==null) return "";
+  if(unit==="g"||unit==="ml"){
+    if(n>=1000) return (Math.round(n/10)/100).toLocaleString("de-DE")+" "+(unit==="g"?"kg":"l");
+    return Math.round(n).toLocaleString("de-DE")+" "+unit;
+  }
+  const whole=Math.floor(n+1e-9), frac=n-whole;
+  const fr={0.25:"¼",0.5:"½",0.75:"¾"};
+  let f=""; for(const k in fr){ if(Math.abs(frac-k)<0.01) f=fr[k]; }
+  let s;
+  if(frac<0.01) s=String(whole);
+  else if(f) s=(whole?whole:"")+f;
+  else s=(Math.round(n*10)/10).toLocaleString("de-DE");
+  return s+(unit?" "+unit:"");
+}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+
+/* ---------- Rezepte anzeigen ---------- */
+function renderGrid(){
+  const q=document.getElementById("search").value.trim().toLowerCase();
+  const g=document.getElementById("grid"); g.innerHTML="";
+  R.forEach(r=>{
+    const sel=state.sel[r.id];
+    if(onlySel && !sel) return;
+    if(q){
+      const hay=(r.name+" "+r.ing.map(x=>x[0]==="#"?x[1]:(I[x[0]][0]+" "+(x[3]||""))).join(" ")).toLowerCase();
+      if(!hay.includes(q)) return;
+    }
+    const mult=sel||1;
+    const rows=r.ing.map(x=>{
+      if(x[0]==="#") return `<tr class="grp"><td colspan="2">${esc(x[1])}</td></tr>`;
+      const [k,a,u,n,o]=x;
+      const amt=a==null?"":fmt(a*(sel?mult:1),u);
+      return `<tr><td class="amt">${amt}</td><td>${esc(I[k][0])}${n?` <span class="opt">(${esc(n)})</span>`:""}${o?` <span class="opt">– optional</span>`:""}</td></tr>`;
+    }).join("");
+    const c=document.createElement("div");
+    c.className="card"+(sel?" sel":"");
+    const myImg=PHOTOS[r.id];
+    c.innerHTML=`${myImg?`<div class="photo"><img src="${myImg}" alt="${esc(r.name)}"><button class="del" aria-label="Foto entfernen">×</button></div>`:`<label class="addphoto">📷 Eigenes Foto hinzufügen<input type="file" accept="image/*"></label>`}
+      <div class="card-head">
+        <input type="checkbox" ${sel?"checked":""} aria-label="${esc(r.name)} auswählen">
+        <div><h3>${esc(r.name)}</h3>
+        <div class="meta">${r.yield?esc(r.yield)+" · ":""}<span class="src">${esc(r.src)}</span></div></div>
+      </div>
+      <div class="qty ${sel?"":"off"}">Wie oft backen?
+        <button data-d="-0.5" aria-label="weniger">−</button>
+        <input type="number" min="0.5" step="0.5" value="${mult}">
+        <button data-d="0.5" aria-label="mehr">+</button>× Rezept
+      </div>
+      <table class="ing">${rows}</table>
+      ${r.note?`<div class="note">${esc(r.note)}</div>`:""}`;
+    const ph=c.querySelector(".photo");
+    if(ph){ ph.querySelector("img").addEventListener("click",()=>openLb(PHOTOS[r.id],r.name));
+      ph.querySelector(".del").addEventListener("click",async e=>{e.stopPropagation(); await delPhoto(r.id); renderGrid();}); }
+    const fi=c.querySelector(".addphoto input");
+    if(fi) fi.addEventListener("change",async()=>{ if(fi.files[0]){ try{ await addPhoto(r.id,fi.files[0]); renderGrid(); }catch(e){ toast("Foto konnte nicht gespeichert werden"); } } });
+    const cb=c.querySelector("input[type=checkbox]");
+    const setSel=v=>{ if(v) state.sel[r.id]=state.sel[r.id]||1; else delete state.sel[r.id]; save(); renderAll(); };
+    cb.addEventListener("change",()=>setSel(cb.checked));
+    c.querySelector("h3").addEventListener("click",()=>setSel(!state.sel[r.id]));
+    const inp=c.querySelector(".qty input");
+    const setM=m=>{ m=Math.max(0.5,Math.round(m*2)/2); state.sel[r.id]=m; save(); renderAll(); };
+    inp.addEventListener("change",()=>setM(parseFloat(String(inp.value).replace(",","."))||1));
+    c.querySelectorAll(".qty button").forEach(b=>b.addEventListener("click",()=>{const cur=state.sel[r.id]; setM(cur?cur+parseFloat(b.dataset.d):1);}));
+    g.appendChild(c);
+  });
+  if(!g.children.length) g.innerHTML=`<div class="empty">Keine Rezepte gefunden.</div>`;
+}
+
+/* ---------- Einkaufsliste berechnen ---------- */
+function computeList(){
+  const items={}; // key -> {units:{u:sum}, vague:bool, from:[...]}
+  Object.entries(state.sel).forEach(([id,m])=>{
+    const r=R.find(x=>x.id===id); if(!r) return;
+    r.ing.forEach(x=>{
+      if(x[0]==="#") return;
+      const [k,a,u,n,o]=x;
+      if(o && !state.opt) return;
+      const it=items[k]=items[k]||{units:{},vague:false,from:new Set()};
+      it.from.add(r.name+(m!==1?" ×"+fmt(m,""):""));
+      if(a==null) it.vague=true; else it.units[u]=(it.units[u]||0)+a*m;
+    });
+  });
+  // Eier zusammenfassen
+  if(items.ei||items.eigelb||items.eiweiss){
+    const whole=items.ei?.units.Stk||0, yolk=items.eigelb?.units.Stk||0, white=items.eiweiss?.units.Stk||0;
+    const total=Math.ceil(whole+Math.max(yolk,white)-1e-9);
+    const parts=[]; if(whole) parts.push(fmt(whole,"")+" ganz"); if(yolk) parts.push(fmt(yolk,"")+" Eigelb"); if(white) parts.push(fmt(white,"")+" Eiweiß");
+    const from=new Set([...(items.ei?.from||[]),...(items.eigelb?.from||[]),...(items.eiweiss?.from||[])]);
+    delete items.eigelb; delete items.eiweiss;
+    items.ei={units:{Stk:total},vague:false,from,detail:parts.join(", ")};
+  }
+  return items;
+}
+function amountText(it){
+  const parts=Object.entries(it.units).map(([u,v])=>fmt(v,u));
+  if(it.vague) parts.push(parts.length?"etwas extra":"nach Bedarf");
+  return parts.join(" + ");
+}
+function renderShop(){
+  const items=computeList();
+  const keys=Object.keys(items);
+  document.getElementById("badge").textContent=Object.keys(state.sel).length;
+  const box=document.getElementById("shop");
+  if(!keys.length){ box.innerHTML=`<div class="empty">Noch keine Rezepte ausgewählt.<br>Wechsle zu „Rezepte“ und hake an, was du backen möchtest.</div>`; }
+  else{
+    let html="";
+    CATS.forEach((cname,ci)=>{
+      const ks=keys.filter(k=>I[k][1]===ci).sort((a,b)=>I[a][0].localeCompare(I[b][0],"de"));
+      if(!ks.length) return;
+      html+=`<div class="cat"><h4>${cname}</h4>`;
+      ks.forEach(k=>{
+        const it=items[k], done=state.done[k];
+        html+=`<label class="item ${done?"done":""}"><input type="checkbox" data-k="${k}" ${done?"checked":""}>
+          <span class="name">${esc(I[k][0])}${it.detail?` <span class="opt">(${esc(it.detail)})</span>`:""}
+          <span class="from">${esc([...it.from].join(" · "))}</span></span>
+          <span class="amount">${esc(amountText(it))}</span></label>`;
+      });
+      html+=`</div>`;
+    });
+    box.innerHTML=html;
+    box.querySelectorAll("input[data-k]").forEach(cb=>cb.addEventListener("change",()=>{
+      if(cb.checked) state.done[cb.dataset.k]=1; else delete state.done[cb.dataset.k]; save(); renderShop();
+    }));
+  }
+  const sl=document.getElementById("selList");
+  const ids=Object.keys(state.sel);
+  sl.innerHTML=ids.length?ids.map(id=>{const r=R.find(x=>x.id===id);return r?`<li><b>${fmt(state.sel[id],"")}×</b> ${esc(r.name)}</li>`:""}).join(""):`<li class="opt">– nichts ausgewählt –</li>`;
+}
+function openLb(src,name){
+  const d=document.createElement("div"); d.className="lightbox";
+  d.innerHTML=`<img src="${src}" alt=""><p>${esc(name)}</p>`;
+  d.addEventListener("click",()=>d.remove()); document.body.appendChild(d);
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".lightbox").forEach(x=>x.remove());});
+function renderAll(){ renderGrid(); renderShop(); }
+
+/* ---------- Bedienung ---------- */
+function show(view){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===view));
+  document.getElementById("view-rezepte").hidden=view!=="rezepte";
+  document.getElementById("view-einkauf").hidden=view!=="einkauf";
+  window.scrollTo(0,0);
+}
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>show(t.dataset.view)));
+document.getElementById("toShop").addEventListener("click",()=>show("einkauf"));
+document.getElementById("search").addEventListener("input",renderGrid);
+document.getElementById("onlySel").addEventListener("click",e=>{onlySel=!onlySel;e.target.classList.toggle("primary",onlySel);renderGrid();});
+document.getElementById("resetSel").addEventListener("click",()=>{state.sel={};state.done={};save();renderAll();});
+const optT=document.getElementById("optToggle"); optT.checked=state.opt;
+optT.addEventListener("change",()=>{state.opt=optT.checked;save();renderShop();});
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800);}
+document.getElementById("copyList").addEventListener("click",async()=>{
+  const items=computeList(); const keys=Object.keys(items);
+  if(!keys.length){toast("Liste ist leer");return;}
+  let txt="Einkaufsliste Plätzchen\n";
+  CATS.forEach((c,ci)=>{
+    const ks=keys.filter(k=>I[k][1]===ci && !state.done[k]).sort((a,b)=>I[a][0].localeCompare(I[b][0],"de"));
+    if(!ks.length) return;
+    txt+="\n"+c+"\n"+ks.map(k=>"☐ "+amountText(items[k])+" – "+I[k][0]).join("\n")+"\n";
+  });
+  try{await navigator.clipboard.writeText(txt);toast("Liste kopiert – z. B. in Notizen einfügen");}
+  catch(e){toast("Kopieren nicht möglich");}
+});
+renderAll();
+idbAll().then(p=>{PHOTOS=p; renderGrid();}).catch(()=>{});
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>

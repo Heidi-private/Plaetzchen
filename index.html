@@ -78,6 +78,31 @@ table.ing tr.grp td{border-bottom:none;padding-top:8px;font-size:11.5px;text-tra
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.show{opacity:1}
 .src{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:#f1ebe2;color:var(--muted);margin-left:4px}
+.print-only{display:none}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff;font-size:11pt;color:#000}
+  header,.tabs,.toolbar,#view-rezepte,.toggle,#copyList,#printList,.hint,.toast,.lightbox,.panel>div:first-child h2{display:none!important}
+  #view-einkauf{display:block!important}
+  main{padding:0!important;max-width:none}
+  .shop-wrap{display:block}
+  .panel{border:none;padding:0;margin:0 0 12px}
+  .print-only{display:block}
+  .print-head h1{font-family:Georgia,serif;font-size:20pt;margin:0}
+  .print-head p{margin:2px 0 8px;color:#555;font-size:10pt}
+  #shop{columns:2;column-gap:10mm}
+  .cat{break-inside:avoid;margin-top:8px}
+  .cat h4{color:#000;border-bottom:1.5px solid #000;padding-bottom:2px;font-size:9.5pt}
+  .item{padding:3px 0;border-bottom:1px solid #ddd;break-inside:avoid}
+  .item input{display:none}
+  .item::before{content:"";width:11px;height:11px;border:1.3px solid #000;border-radius:2px;flex:none;margin-top:3px}
+  .item.done{display:none}
+  .item .from{font-size:8pt;color:#666}
+  .item .amount{color:#000}
+  .shop-wrap>.panel:last-child{border-top:1px solid #000;padding-top:6px}
+  .shop-wrap>.panel:last-child h2{font-size:11pt;margin:0 0 2px}
+  .sel-list{margin:0;padding-left:18px;columns:2;font-size:9.5pt}
+}
 </style>
 </head>
 <body>
@@ -109,8 +134,10 @@ table.ing tr.grp td{border-bottom:none;padding-top:8px;font-size:11.5px;text-tra
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <label class="toggle"><input type="checkbox" id="optToggle" checked> optionale Zutaten einrechnen</label>
             <button class="btn" id="copyList">Liste kopieren</button>
+            <button class="btn primary" id="printList">🖨 Drucken</button>
           </div>
         </div>
+        <div class="print-only print-head"><h1>Einkaufsliste Plätzchen</h1><p id="printDate"></p></div>
         <div id="shop"></div>
       </div>
       <div class="panel">
@@ -438,6 +465,11 @@ document.getElementById("importFotos").addEventListener("change",async e=>{
     renderGrid(); toast(n? n+" Fotos importiert":"Keine passenden Fotos in der Datei");
   }catch(err){ toast("Das ist keine gültige Foto-Datei"); }
   e.target.value="";
+});
+document.getElementById("printList").addEventListener("click",()=>{
+  if(!Object.keys(state.sel).length){ toast("Erst Rezepte auswählen"); return; }
+  document.getElementById("printDate").textContent="Stand: "+new Date().toLocaleDateString("de-DE",{day:"numeric",month:"long",year:"numeric"})+" · bereits abgehakte Zutaten sind ausgeblendet";
+  try{ window.print(); }catch(e){ toast("Drucken über das Teilen-Symbol → Drucken"); }
 });
 if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 </script>
